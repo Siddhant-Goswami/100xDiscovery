@@ -21,20 +21,20 @@ class APIClient:
         try:
             # Try to get environment from Streamlit secrets
             environment = st.secrets["ENVIRONMENT"]
-            self.base_url = st.secrets["PROD_API_URL"] if environment == "production" else "http://localhost:8000"
+            base_url = st.secrets["PROD_API_URL"] if environment == "production" else "http://localhost:8000"
         except KeyError:
             # Fallback to local environment variables
             environment = os.getenv("ENVIRONMENT", "development")
             if environment == "production":
-                self.base_url = os.getenv("PROD_API_URL")
-                if not self.base_url:
+                base_url = os.getenv("PROD_API_URL")
+                if not base_url:
                     st.error("Production API URL not configured. Please set PROD_API_URL in environment variables or Streamlit secrets.")
                     raise ValueError("PROD_API_URL not set in production environment")
             else:
-                self.base_url = "http://localhost:8000"
+                base_url = "http://localhost:8000"
         
-        # Remove trailing slash if present
-        self.base_url = self.base_url.rstrip('/')
+        # Remove trailing slash if present and add /api prefix
+        self.base_url = f"{base_url.rstrip('/')}/api"
         
         # Display API URL in sidebar (only in development)
         if environment == "development":
