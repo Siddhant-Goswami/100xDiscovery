@@ -8,4 +8,6 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 groq==0.4.2
-python-dotenv==1.0.0 
+httpx==0.24.0
+watchfiles==0.21.0
+websockets==11.0.3 
