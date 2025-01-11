@@ -19,10 +19,10 @@ st.set_page_config(
 class APIClient:
     def __init__(self):
         # Get the Hugging Face Space URL from environment or use localhost
-        space_url = os.getenv("SPACE_ID")  # Hugging Face Spaces provides this automatically
-        if space_url:
+        space_id = os.getenv("SPACE_ID")  # Hugging Face Spaces provides this automatically
+        if space_id:
             # In Hugging Face Spaces, the FastAPI service will be available at port 8000
-            self.base_url = f"https://{space_url}-8000.hf.space"
+            self.base_url = f"https://{space_id}.hf.space/api"  # Updated URL format
         else:
             # Local development
             self.base_url = "http://localhost:8000"

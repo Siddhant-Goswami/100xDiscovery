@@ -6,9 +6,9 @@ configuration:
   services:
     - name: fastapi
       dist: python
-      port: 8000
-      command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+      port: 7860
+      command: uvicorn app.main:app --host 0.0.0.0 --port 7860 --root-path /api
     - name: streamlit
       dist: python
       port: 8501
-      command: streamlit run frontend/app.py 
+      command: streamlit run app.py 
