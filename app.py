@@ -21,8 +21,8 @@ class APIClient:
         # Get the Hugging Face Space URL from environment or use localhost
         space_id = os.getenv("SPACE_ID")  # Hugging Face Spaces provides this automatically
         if space_id:
-            # In Hugging Face Spaces, the FastAPI service will be available at port 8000
-            self.base_url = f"https://{space_id}.hf.space/api"  # Updated URL format
+            # In Hugging Face Spaces, the FastAPI service will be available at port 7860
+            self.base_url = f"https://{space_id}.hf.space"  # Remove /api from base_url
         else:
             # Local development
             self.base_url = "http://localhost:8000"
@@ -37,7 +37,8 @@ class APIClient:
 
     def get(self, endpoint: str):
         try:
-            response = requests.get(f"{self.base_url}{endpoint}")
+            # Add /api prefix to all endpoints
+            response = requests.get(f"{self.base_url}/api{endpoint}")
             return self._handle_response(response)
         except Exception as e:
             st.error(f"API Error: {str(e)}")
@@ -87,7 +88,7 @@ def search_profiles(query: str):
     try:
         response = requests.post(
             f"{api.base_url}/api/search",
-            json={"query": query}  # Send query in correct format
+            json={"query": query}
         )
         if not response.ok:
             if response.status_code == 422:
