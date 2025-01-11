@@ -19,11 +19,11 @@ st.set_page_config(
 class APIClient:
     def __init__(self):
         # Get environment configuration
-        environment = st.secrets["env"]["ENVIRONMENT"]
+        environment = st.secrets["ENVIRONMENT"]
         
         # Set base URL based on environment
         if environment == "production":
-            self.base_url = st.secrets["env"]["PROD_API_URL"]
+            self.base_url = st.secrets["PROD_API_URL"]
             if not self.base_url:
                 st.error("Production API URL not configured. Please set PROD_API_URL in .streamlit/config.toml")
                 raise ValueError("PROD_API_URL not set in production environment")
