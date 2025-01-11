@@ -100,13 +100,17 @@ def create_profile(profile_data: dict):
         st.error(f"An unexpected error occurred: {str(e)}")
         return None
 
-def search_profiles(query: str):
+def search_profiles(query: str, groq_api_key: str = None):
     try:
         url = api._get_endpoint_url('search')
-        response = requests.post(
-            url,
-            json={"query": query}
-        )
+        # Include Groq API key in request if provided
+        payload = {
+            "query": query,
+            "use_groq": bool(groq_api_key),
+            "groq_api_key": groq_api_key
+        }
+        response = requests.post(url, json=payload)
+        
         if not response.ok:
             if response.status_code == 422:
                 st.error("Invalid search query format")
@@ -185,6 +189,17 @@ if page == "Create Profile":
 elif page == "Search Profiles":
     st.header("Search Profiles")
     
+    # Add Groq API key input
+    with st.expander("🔑 Configure Semantic Search", expanded=False):
+        st.markdown("""
+        To enable advanced semantic search using Groq LLM:
+        1. Get your API key from [Groq Cloud](https://console.groq.com)
+        2. Enter it below
+        
+        If no API key is provided, the search will use basic keyword matching.
+        """)
+        groq_api_key = st.text_input("Groq API Key", type="password", help="Optional: Enter your Groq API key for semantic search")
+    
     st.markdown("""
     Search for engineers using natural language. Examples:
     - "Find someone experienced in machine learning and NLP"
@@ -192,16 +207,20 @@ elif page == "Search Profiles":
     - "Need a collaborator for an open source AI project"
     """)
     
-    query = st.text_input("Enter your search query in natural language")
+    # Search interface
+    query = st.text_input("Enter your search query")
     
     if query:
-        results = search_profiles(query)
+        if not groq_api_key:
+            st.info("ℹ️ Using basic keyword search. For better results, configure Groq API key above.")
+        
+        results = search_profiles(query, groq_api_key)
         
         if results:
             st.subheader(f"Found {len(results)} matches")
             for result in results:
                 profile = result['profile']
-                explanation = result['explanation']
+                explanation = result.get('explanation', 'Matched based on keyword search')
                 
                 with st.expander(f"{profile['name']}"):
                     # Display match explanation
