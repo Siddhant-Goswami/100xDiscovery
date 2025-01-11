@@ -18,29 +18,66 @@ st.set_page_config(
 # API client setup
 class APIClient:
     def __init__(self):
-        # Get the backend API URL from environment or use localhost
-        self.base_url = os.getenv("BACKEND_API_URL", "http://localhost:8000")
-        st.sidebar.text(f"API URL: {self.base_url}")
+        # Get environment configuration
+        environment = st.secrets["env"]["ENVIRONMENT"]
+        
+        # Set base URL based on environment
+        if environment == "production":
+            self.base_url = st.secrets["env"]["PROD_API_URL"]
+            if not self.base_url:
+                st.error("Production API URL not configured. Please set PROD_API_URL in .streamlit/config.toml")
+                raise ValueError("PROD_API_URL not set in production environment")
+        else:
+            self.base_url = "http://localhost:8000"
+        
+        # Remove trailing slash if present
+        self.base_url = self.base_url.rstrip('/')
+        
+        # Display API URL in sidebar (only in development)
+        if environment == "development":
+            st.sidebar.text(f"API URL: {self.base_url}")
+            st.sidebar.text(f"Environment: {environment}")
+        
+    def _get_endpoint_url(self, endpoint: str) -> str:
+        # Remove leading slash if present
+        endpoint = endpoint.lstrip('/')
+        return f"{self.base_url}/{endpoint}"
         
     def _handle_response(self, response):
         if response.ok:
             return response.json()
-        st.error(f"Error: {response.status_code} - {response.text}")
+        
+        # Handle different error cases
+        if response.status_code == 404:
+            st.error("Resource not found. Please check if the API is running and the endpoint is correct.")
+            st.error(f"Attempted URL: {response.url}")
+        elif response.status_code == 422:
+            error_detail = response.json().get('detail', 'Validation error occurred')
+            st.error(f"Validation Error: {error_detail}")
+        elif response.status_code >= 500:
+            st.error("Server error occurred. Please try again later.")
+        else:
+            st.error(f"Error: {response.status_code} - {response.text}")
         return None
 
     def get(self, endpoint: str):
         try:
-            response = requests.get(f"{self.base_url}{endpoint}")
+            url = self._get_endpoint_url(endpoint)
+            response = requests.get(url)
             return self._handle_response(response)
+        except requests.ConnectionError:
+            st.error("Could not connect to the API. Please check if the server is running.")
+            return None
         except Exception as e:
-            st.error(f"API Error: {str(e)}")
+            st.error(f"An unexpected error occurred: {str(e)}")
             return None
 
 api = APIClient()
 
 def create_profile(profile_data: dict):
     try:
-        response = requests.post(f"{api.base_url}/profiles", json=profile_data)
+        url = api._get_endpoint_url('profiles')
+        response = requests.post(url, json=profile_data)
         if response.status_code == 422:
             error_detail = response.json().get('detail', [])
             if isinstance(error_detail, list):
@@ -62,8 +99,9 @@ def create_profile(profile_data: dict):
 
 def search_profiles(query: str):
     try:
+        url = api._get_endpoint_url('search')
         response = requests.post(
-            f"{api.base_url}/search",
+            url,
             json={"query": query}
         )
         if not response.ok:
@@ -73,7 +111,7 @@ def search_profiles(query: str):
                 st.error(f"Search failed with status code: {response.status_code}")
             return []
         return response.json()
-    except requests.exceptions.ConnectionError:
+    except requests.ConnectionError:
         st.error("Could not connect to the server. Please make sure the backend is running.")
         return []
     except Exception as e:
@@ -82,12 +120,13 @@ def search_profiles(query: str):
 
 def list_profiles():
     try:
-        response = requests.get(f"{api.base_url}/profiles")
+        url = api._get_endpoint_url('profiles')
+        response = requests.get(url)
         if not response.ok:
             st.error(f"Failed to fetch profiles: {response.status_code}")
             return []
         return response.json()
-    except requests.exceptions.ConnectionError:
+    except requests.ConnectionError:
         st.error("Could not connect to the server. Please make sure the backend is running.")
         return []
     except Exception as e:

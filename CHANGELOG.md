@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.1.0] - 2024-01-11
+
+### Changed
+- Updated frontend environment configuration
+- Added separate production and development API URLs
+- Improved API client error handling
+- Enhanced development debugging information
+
+### Added
+- Environment-based API URL selection
+- Better error messages for API connectivity
+- Development mode indicators in UI
+
 ## [2.0.0] - 2024-01-11
 
 ### Changed
