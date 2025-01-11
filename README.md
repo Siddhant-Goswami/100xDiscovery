@@ -1,20 +1,6 @@
----
-title: 100xdiscovery
-emoji: 🐨
-colorFrom: blue
-colorTo: indigo
-sdk: streamlit
-sdk_version: 1.29.0
-app_file: app.py
-pinned: false
-license: mit
----
+# 100xEngineers Discovery Platform 🚀
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
-
-# 100xEngineers Discovery Platform Monorepo 🚀
-
-This monorepo contains both the backend and frontend components of the 100xEngineers Discovery Platform.
+A platform for discovering and connecting with engineers based on their technical skills, AI expertise, and collaboration interests. Built with FastAPI and Streamlit.
 
 ## Project Structure
 
@@ -23,7 +9,7 @@ This monorepo contains both the backend and frontend components of the 100xEngin
 ├── backend/                 # FastAPI Backend
 │   ├── app/                # Application code
 │   │   ├── main.py        # FastAPI application
-│   │   ├── models/        # Pydantic models
+│   │   ├── models/        # Data models
 │   │   └── services/      # Business logic
 │   ├── tests/             # Backend tests
 │   ├── requirements.txt   # Backend dependencies
@@ -37,75 +23,78 @@ This monorepo contains both the backend and frontend components of the 100xEngin
     └── .env.example      # Example environment variables
 ```
 
-## Setup & Development
+## Quick Start
 
 ### Backend (FastAPI)
 
-1. Create and activate a virtual environment:
+1. Set up Python environment:
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
+2. Configure environment:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your settings
 ```
 
-4. Run the backend:
+3. Run the backend:
 ```bash
 uvicorn app.main:app --reload
 ```
 
-The API will be available at http://localhost:8000
+Visit http://localhost:8000/docs for API documentation
 
 ### Frontend (Streamlit)
 
-1. Create and activate a virtual environment:
+1. Set up Python environment:
 ```bash
 cd frontend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
+2. Configure environment:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your settings
 ```
 
-4. Run the frontend:
+3. Run the frontend:
 ```bash
 streamlit run src/app.py
 ```
 
-The UI will be available at http://localhost:8501
+Visit http://localhost:8501 to use the application
 
-## Deployment
+## Features
+
+- 👤 Create and manage engineer profiles
+- 🔍 Search profiles using natural language
+- 🤝 Find collaborators based on skills
+- 📊 View all registered profiles
+
+## Development
 
 ### Backend
-- The backend can be deployed to any platform that supports Python/FastAPI (e.g., Heroku, DigitalOcean, AWS)
-- Set the appropriate environment variables in your deployment platform
+- Built with FastAPI for high performance
+- Uses Pydantic for data validation
+- Groq integration for natural language search
+- JSON file-based storage for simplicity
 
 ### Frontend
-- The frontend can be deployed to Streamlit Cloud or any platform that supports Python/Streamlit
-- Make sure to set the `BACKEND_API_URL` to point to your deployed backend
+- Built with Streamlit for rapid development
+- Clean and intuitive user interface
+- Real-time form validation
+- Responsive design
 
 ## Contributing
 
-1. Clone the repository
+1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
