@@ -1,0 +1,268 @@
+# FastAPI + Streamlit + Groq Project Setup Rules
+
+## Project Structure
+```
+.
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI application
+│   ├── models/             
+│   │   ├── __init__.py
+│   │   └── base.py         # Pydantic models
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── llm.py         # LLM integration
+│   └── utils/
+│       ├── __init__.py
+│       └── helpers.py      # Utility functions
+├── frontend/
+│   ├── __init__.py
+│   └── app.py             # Streamlit application
+├── data/                  # Data storage
+├── tests/
+│   ├── __init__.py
+│   ├── test_api.py
+│   └── test_services.py
+├── .env                   # Environment variables
+├── .gitignore
+├── README.md
+├── requirements.txt
+└── run.py                # Application entry point
+```
+
+## Required Dependencies
+```python
+# requirements.txt
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+streamlit>=1.25.0
+requests>=2.31.0
+python-multipart>=0.0.6
+python-dotenv>=1.0.0
+groq>=0.4.0
+pytest>=7.4.0
+httpx>=0.24.0  # For testing
+```
+
+## Environment Variables
+```bash
+# .env
+GROQ_API_KEY=your-api-key
+ENVIRONMENT=development
+CORS_ORIGINS=["http://localhost:8501"]
+```
+
+## Best Practices
+
+### FastAPI Setup
+```python
+# app/main.py
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
+
+app = FastAPI(
+    title="Your App Name",
+    description="Your app description",
+    version="1.0.0"
+)
+
+# CORS setup
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=json.loads(os.getenv("CORS_ORIGINS", '["http://localhost:8501"]')),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Error handling
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+```
+
+### Pydantic Models
+```python
+# app/models/base.py
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime
+from uuid import UUID, uuid4
+
+class BaseModelWithTimestamp(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def model_dump(self, *args, **kwargs):
+        data = super().model_dump(*args, **kwargs)
+        # Convert UUID and datetime to string
+        data['id'] = str(data['id'])
+        data['created_at'] = data['created_at'].isoformat()
+        data['updated_at'] = data['updated_at'].isoformat()
+        return data
+```
+
+### Streamlit Setup
+```python
+# frontend/app.py
+import streamlit as st
+import requests
+from typing import Dict, List
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Page config
+st.set_page_config(
+    page_title="Your App Name",
+    page_icon="🚀",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# API client setup
+class APIClient:
+    def __init__(self):
+        self.base_url = os.getenv("API_URL", "http://localhost:8000")
+        
+    def _handle_response(self, response):
+        if response.ok:
+            return response.json()
+        st.error(f"Error: {response.status_code} - {response.text}")
+        return None
+
+    def get(self, endpoint: str):
+        try:
+            response = requests.get(f"{self.base_url}{endpoint}")
+            return self._handle_response(response)
+        except Exception as e:
+            st.error(f"API Error: {str(e)}")
+            return None
+
+api = APIClient()
+```
+
+### LLM Integration
+```python
+# app/services/llm.py
+from groq import Groq
+from dotenv import load_dotenv
+import os
+import json
+from typing import List, Dict, Any
+
+load_dotenv()
+
+class LLMService:
+    def __init__(self):
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY not set")
+        self.client = Groq(api_key=api_key)
+    
+    def _handle_response(self, response_text: str) -> Dict[str, Any]:
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError as e:
+            print(f"Error parsing LLM response: {e}")
+            return None
+```
+
+### Data Storage
+```python
+# app/utils/storage.py
+import json
+from pathlib import Path
+from typing import Dict, Any
+from fastapi import HTTPException
+
+class JSONStorage:
+    def __init__(self, file_path: str):
+        self.file_path = Path(file_path)
+        self.file_path.parent.mkdir(exist_ok=True)
+        
+    def read(self) -> Dict[str, Any]:
+        try:
+            if not self.file_path.exists():
+                return {}
+            with open(self.file_path, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            return {}
+            
+    def write(self, data: Dict[str, Any]):
+        temp_file = self.file_path.with_suffix('.tmp')
+        try:
+            with open(temp_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            temp_file.replace(self.file_path)
+        except Exception as e:
+            if temp_file.exists():
+                temp_file.unlink()
+            raise HTTPException(status_code=500, detail=str(e))
+```
+
+## Common Issues & Solutions
+
+1. **Environment Variables**
+   - Always use python-dotenv
+   - Check variables at startup
+   - Provide clear error messages
+
+2. **JSON Handling**
+   - Always use try-except for JSON operations
+   - Implement atomic writes
+   - Validate data before saving
+
+3. **API Errors**
+   - Implement proper error handling
+   - Use appropriate HTTP status codes
+   - Return meaningful error messages
+
+4. **LLM Integration**
+   - Handle malformed responses
+   - Implement fallback mechanisms
+   - Cache expensive operations
+
+5. **Frontend**
+   - Show loading states
+   - Handle API errors gracefully
+   - Validate input before submission
+
+6. **Testing**
+   - Write tests for API endpoints
+   - Mock external services
+   - Test error conditions
+
+## Security Considerations
+
+1. **Environment Variables**
+   - Never commit .env files
+   - Use secure secrets management in production
+
+2. **API Security**
+   - Implement rate limiting
+   - Add authentication when needed
+   - Validate all inputs
+
+3. **CORS**
+   - Restrict origins in production
+   - Only allow necessary methods
+   - Handle credentials properly
+
+4. **Data Storage**
+   - Implement backup mechanisms
+   - Use atomic operations
+   - Validate data integrity

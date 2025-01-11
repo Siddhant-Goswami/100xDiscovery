@@ -1,0 +1,14 @@
+# Spacefile Docs: https://huggingface.co/docs/hub/spaces-config-reference
+configuration:
+  hardware:
+    cpu: 2
+    memory: 16
+  services:
+    - name: fastapi
+      dist: python
+      port: 8000
+      command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    - name: streamlit
+      dist: python
+      port: 8501
+      command: streamlit run frontend/app.py 
