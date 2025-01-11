@@ -12,78 +12,104 @@ license: mit
 
 Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
 
-# 100xEngineers Discovery Platform 🚀
+# 100xEngineers Discovery Platform Monorepo 🚀
 
-A platform for discovering and connecting with engineers based on their technical skills, AI expertise, and collaboration interests. Built with FastAPI, Streamlit, and powered by Groq LLM for intelligent profile matching.
+This monorepo contains both the backend and frontend components of the 100xEngineers Discovery Platform.
 
-## Features
+## Project Structure
 
-- 👤 Create and manage detailed engineer profiles
-- 🔍 Natural language search powered by Groq LLM
-- 🤝 Find collaborators based on skills and interests
-- 📊 View all registered profiles
-- 🎯 Get detailed match explanations
+```
+.
+├── backend/                 # FastAPI Backend
+│   ├── app/                # Application code
+│   │   ├── main.py        # FastAPI application
+│   │   ├── models/        # Pydantic models
+│   │   └── services/      # Business logic
+│   ├── tests/             # Backend tests
+│   ├── requirements.txt   # Backend dependencies
+│   └── .env.example       # Example environment variables
+│
+└── frontend/              # Streamlit Frontend
+    ├── src/              # Source code
+    │   └── app.py        # Streamlit application
+    ├── tests/            # Frontend tests
+    ├── requirements.txt  # Frontend dependencies
+    └── .env.example      # Example environment variables
+```
 
-## Tech Stack
+## Setup & Development
 
-- **Backend**: FastAPI
-- **Frontend**: Streamlit
-- **LLM Integration**: Groq
-- **Data Storage**: JSON with atomic operations
-- **Deployment**: Hugging Face Spaces
+### Backend (FastAPI)
 
-## Environment Variables
-
-The following environment variables need to be set in your Hugging Face Space:
-
-- `GROQ_API_KEY`: Your Groq API key
-- `HF_SPACE_URL`: Your Hugging Face Space URL (set automatically)
-- `ENVIRONMENT`: Set to "production" for deployment
-- `CORS_ORIGINS`: List of allowed origins (automatically configured)
-
-## Local Development
-
-1. Clone the repository
-2. Create a virtual environment:
+1. Create and activate a virtual environment:
 ```bash
+cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Create a `.env` file with required variables
-5. Run the application:
+3. Set up environment variables:
 ```bash
-# Terminal 1: Backend
-python run.py
-
-# Terminal 2: Frontend
-streamlit run frontend/app.py
+cp .env.example .env
+# Edit .env with your configuration
 ```
+
+4. Run the backend:
+```bash
+uvicorn app.main:app --reload
+```
+
+The API will be available at http://localhost:8000
+
+### Frontend (Streamlit)
+
+1. Create and activate a virtual environment:
+```bash
+cd frontend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+4. Run the frontend:
+```bash
+streamlit run src/app.py
+```
+
+The UI will be available at http://localhost:8501
 
 ## Deployment
 
-This application is deployed on Hugging Face Spaces. The deployment is configured using the `Spacefile` which sets up both the FastAPI backend and Streamlit frontend services.
+### Backend
+- The backend can be deployed to any platform that supports Python/FastAPI (e.g., Heroku, DigitalOcean, AWS)
+- Set the appropriate environment variables in your deployment platform
 
-## Usage
-
-1. **Create Profile**: Add your engineering profile with skills, expertise, and interests
-2. **Search Profiles**: Use natural language to find matching engineers
-3. **View Matches**: See detailed explanations of why profiles match your search
-4. **Browse All**: View all registered engineer profiles
+### Frontend
+- The frontend can be deployed to Streamlit Cloud or any platform that supports Python/Streamlit
+- Make sure to set the `BACKEND_API_URL` to point to your deployed backend
 
 ## Contributing
 
-1. Fork the repository
+1. Clone the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Make your changes
+4. Submit a pull request
 
 ## License
 
-MIT License - feel free to use this project as a template for your own applications!
+MIT License
