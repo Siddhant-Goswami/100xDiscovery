@@ -1,5 +1,33 @@
 # Changelog
 
+## [2.2.1] - 2024-01-11
+
+### Fixed
+- Fixed local development environment configuration
+- Added fallback mechanism for environment variables
+- Improved error handling for missing secrets
+- Added local secrets.toml template
+
+## [2.2.0] - 2024-01-11
+
+### Added
+- Optional Groq API key input in UI
+- Fallback to keyword search when Groq key not provided
+- Better error messages for API connectivity
+- URL debugging information in development mode
+
+### Changed
+- Made Groq integration optional and user-configurable
+- Improved API endpoint handling with proper /api prefix
+- Enhanced error handling with detailed messages
+- Updated search UI with configuration expander
+
+### Fixed
+- Fixed 404 errors in production by correcting API URL construction
+- Fixed environment variable handling in Streamlit Cloud
+- Fixed search functionality to work with/without Groq
+- Improved error messages for better debugging
+
 ## [2.1.0] - 2024-01-11
 
 ### Changed

@@ -18,20 +18,18 @@ st.set_page_config(
 # API client setup
 class APIClient:
     def __init__(self):
+        # First try to get config from environment variables (local development)
+        environment = os.getenv("ENVIRONMENT", "development")
+        base_url = os.getenv("DEV_API_URL", "http://localhost:8000")
+        
+        # If in production, try to get from Streamlit secrets
         try:
-            # Try to get environment from Streamlit secrets
-            environment = st.secrets["ENVIRONMENT"]
-            base_url = st.secrets["PROD_API_URL"] if environment == "production" else "http://localhost:8000"
-        except KeyError:
-            # Fallback to local environment variables
-            environment = os.getenv("ENVIRONMENT", "development")
             if environment == "production":
-                base_url = os.getenv("PROD_API_URL")
-                if not base_url:
-                    st.error("Production API URL not configured. Please set PROD_API_URL in environment variables or Streamlit secrets.")
-                    raise ValueError("PROD_API_URL not set in production environment")
-            else:
-                base_url = "http://localhost:8000"
+                environment = st.secrets.get("ENVIRONMENT", environment)
+                base_url = st.secrets.get("PROD_API_URL", base_url)
+        except (FileNotFoundError, KeyError):
+            # If secrets fail, continue with environment variables
+            pass
         
         # Remove trailing slash if present and add /api prefix
         self.base_url = f"{base_url.rstrip('/')}/api"

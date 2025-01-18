@@ -24,6 +24,7 @@ wheels/
 # Virtual Environment
 venv/
 ENV/
+backend/llm-100x/
 
 # IDE
 .idea/
@@ -40,3 +41,4 @@ data/
 *.log
 .coverage
 htmlcov/ 
+frontend/.streamlit/

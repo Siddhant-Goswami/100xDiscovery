@@ -9,12 +9,46 @@
 - Place services in `app/services/`
 - Keep tests in `tests/` directory
 - Use meaningful file names
+- Always prefix API routes with `/api`
 
 ### Frontend (Streamlit)
 - Keep all frontend code in the `frontend/` directory
 - Place application code in `src/`
 - Keep tests in `tests/` directory
 - Use descriptive component names
+- Handle both development and production configurations
+
+## API Integration
+
+### URL Handling
+- Always handle trailing slashes in URLs
+- Use proper URL joining methods
+- Include /api prefix in backend routes
+- Validate complete URL paths
+- Log URL attempts during development
+
+### Error Handling
+- Implement comprehensive error handling
+- Provide clear error messages
+- Include debugging information in development
+- Handle connection errors gracefully
+- Log failed API attempts
+
+## Environment Configuration
+
+### Development
+- Use .env files for local development
+- Set clear default values
+- Document all environment variables
+- Include example configurations
+- Test with local API endpoints
+
+### Production
+- Use platform-specific secrets management
+- Handle missing environment variables gracefully
+- Provide fallback configurations
+- Validate required variables
+- Test with production endpoints
 
 ## Code Style
 
@@ -48,8 +82,9 @@
 - Keep backups of important data
 
 ### Environment Variables
-- Use python-dotenv
-- Never commit .env files
+- Use python-dotenv for development
+- Use platform secrets for production
+- Never commit sensitive data
 - Document all required variables
 - Use meaningful variable names
 
@@ -60,40 +95,30 @@
 - Test API endpoints
 - Mock external services
 - Test error conditions
+- Validate URL paths
 
 ### Frontend Tests
 - Test form validation
 - Test API integration
 - Test error handling
 - Test UI components
+- Verify environment handling
 
-## Git Practices
+## Debugging
 
-### Commits
-- Write clear commit messages
-- Keep commits focused
-- Follow conventional commits
-- Reference issues when relevant
+### Development Mode
+- Show detailed error messages
+- Display API URLs
+- Log request attempts
+- Show environment information
+- Enable verbose logging
 
-### Branches
-- Use feature branches
-- Keep main branch stable
-- Delete merged branches
-- Use meaningful branch names
-
-## Documentation
-
-### Code Comments
-- Explain complex logic
-- Document assumptions
-- Keep comments up to date
-- Use inline documentation
-
-### README
-- Keep it current
-- Include setup instructions
-- Document features
-- List dependencies
+### Production Mode
+- Hide sensitive information
+- Use appropriate error messages
+- Log errors securely
+- Monitor API health
+- Track performance metrics
 
 ## Security
 
@@ -102,12 +127,14 @@
 - Use environment variables
 - Validate user input
 - Handle errors securely
+- Protect sensitive routes
 
 ### API Security
 - Implement rate limiting
 - Use proper authentication
 - Validate request data
 - Handle sensitive data carefully
+- Monitor API usage
 
 ## Performance
 
@@ -116,9 +143,27 @@
 - Implement caching
 - Optimize database queries
 - Monitor performance
+- Handle timeouts properly
 
 ### Frontend
 - Minimize API calls
 - Use proper loading states
 - Implement pagination
 - Optimize UI updates
+- Cache responses when appropriate
+
+## Deployment
+
+### Backend
+- Validate API routes
+- Test environment variables
+- Monitor error rates
+- Track API usage
+- Implement health checks
+
+### Frontend
+- Test production builds
+- Verify API connectivity
+- Monitor user experience
+- Track error rates
+- Implement analytics
