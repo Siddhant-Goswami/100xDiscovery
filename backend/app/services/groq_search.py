@@ -1,87 +1,94 @@
 import os
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from groq import Groq
 from app.models.user import UserProfile
-from dotenv import load_dotenv
 import json
 
-# Load environment variables from .env file
-load_dotenv()
-
 class GroqSearchService:
-    def __init__(self):
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY environment variable is not set")
-            
-        self.client = Groq(
-            api_key=api_key,
-        )
-        
     def _create_profile_context(self, profile: UserProfile) -> str:
         """Create a searchable context string from a profile."""
         return f"""
+Profile ID: {profile.id}
 Name: {profile.name}
 Technical Skills: {', '.join(profile.technical_skills)}
 Projects: {', '.join(profile.projects)}
 AI Expertise: {', '.join(profile.ai_expertise)}
 Mentoring Preferences: {profile.mentoring_preferences}
 Collaboration Interests: {', '.join(profile.collaboration_interests)}
+Portfolio: {profile.portfolio_url if profile.portfolio_url else 'Not provided'}
 """
 
-    def search_profiles(self, query: str, profiles: List[UserProfile]) -> List[Tuple[UserProfile, str]]:
+    def search_profiles(self, query: str, profiles: List[UserProfile], api_key: str) -> List[Tuple[UserProfile, str]]:
         """
         Search profiles using Groq LLM and return matches with explanations.
         Returns: List of tuples (profile, explanation)
         """
         if not profiles:
             return []
-
-        # Create context from all profiles
-        profile_contexts = {str(p.id): self._create_profile_context(p) for p in profiles}
+            
+        if not api_key:
+            raise ValueError("Groq API key is required for semantic search")
+            
+        # Debug: Check API key format
+        print(f"Debug: API key length: {len(api_key)}")
+        print(f"Debug: API key prefix: {api_key[:10]}...")
         
-        # Create the prompt for Groq
-        prompt = f"""You are an expert at matching engineers based on their profiles. Your task is to find the most relevant profiles that match the given search query.
+        try:
+            # Initialize Groq client with provided API key
+            client = Groq(api_key=api_key.strip())  # Ensure no whitespace
+            print("Debug: Groq client initialized successfully")
+
+            # Create context from all profiles
+            profile_contexts = {str(p.id): self._create_profile_context(p) for p in profiles}
+            print(f"Debug: Created context for {len(profiles)} profiles")
+            
+            # Create the prompt for Groq
+            prompt = f"""You are an expert at matching engineers based on their profiles. Your task is to find the most relevant profiles that match the given search query.
 
 Search Query: "{query}"
 
 Available Engineer Profiles:
 {'-' * 80}
 """
-        for pid, context in profile_contexts.items():
-            prompt += f"\nProfile ID: {pid}\n{context}\n{'-' * 80}"
+            for pid, context in profile_contexts.items():
+                prompt += f"\nProfile ID: {pid}\n{context}\n{'-' * 80}"
 
-        prompt += """\nInstructions:
-1. Analyze the search query and understand the key requirements.
-2. Compare these requirements against each profile's skills, expertise, and preferences.
-3. For each matching profile, calculate a match score (0-100) based on:
+            prompt += """\nInstructions:
+1. Analyze the search query to understand the key requirements and preferences.
+2. For each profile, evaluate:
    - Direct skill matches
-   - Related expertise
-   - Project experience
-   - Mentoring alignment
+   - Related expertise and experience
+   - Project relevance
+   - Mentoring compatibility
    - Collaboration potential
+   - Overall fit for the query
+3. Score each profile (0-100) based on:
+   - Exact matches: +40 points
+   - Related/Similar matches: +30 points
+   - Soft skill alignment: +20 points
+   - Additional relevant factors: +10 points
 
 Return your analysis in the following JSON format:
-[
-  {
-    "profile_id": "exact-profile-uuid-from-above",
-    "match_score": number-between-0-and-100,
-    "explanation": "Detailed explanation of why this profile matches the search query"
-  }
-]
+{
+  "matches": [
+    {
+      "profile_id": "exact-profile-uuid-from-above",
+      "match_score": number-between-0-and-100,
+      "explanation": "Detailed explanation of why this profile matches"
+    }
+  ]
+}
 
 Important:
-- Include ANY profile that has relevant matches, even if the match score is moderate
-- Be lenient with matching - if someone has related skills, they might be a good fit
-- The explanation should be specific about why the profile matches
-- Sort results by match_score in descending order
-- Return an empty list [] if truly no profiles match
+- Include ANY profile with a score > 30
+- Be thorough but concise in explanations
+- Focus on the most relevant aspects for the query
+- Sort by match_score in descending order
+- Return valid JSON only"""
 
-Remember: It's better to show more potential matches than to be too restrictive."""
-
-        # Get response from Groq
-        try:
-            chat_completion = self.client.chat.completions.create(
+            print("Debug: Sending request to Groq API...")
+            # Get response from Groq
+            chat_completion = client.chat.completions.create(
                 messages=[
                     {
                         "role": "system",
@@ -93,29 +100,41 @@ Remember: It's better to show more potential matches than to be too restrictive.
                     }
                 ],
                 model="llama3-8b-8192",
-                temperature=0.2,  # Slightly higher temperature for more inclusive matching
-                max_tokens=2000,
+                temperature=0.3,
+                max_tokens=4000,
             )
+            print("Debug: Received response from Groq API")
             
             response_text = chat_completion.choices[0].message.content.strip()
+            print(f"Debug: Response length: {len(response_text)}")
             
-            # Try to extract JSON if it's wrapped in backticks or has extra text
+            # Parse JSON response
             try:
-                # First try direct JSON parsing
-                matches = json.loads(response_text)
-            except json.JSONDecodeError:
-                # Try to extract JSON from the response
-                import re
-                json_match = re.search(r'\[[\s\S]*\]', response_text)
-                if json_match:
-                    try:
-                        matches = json.loads(json_match.group(0))
-                    except json.JSONDecodeError:
-                        print(f"Failed to parse Groq response: {response_text}")
-                        return self._fallback_search(query, profiles)
-                else:
-                    print(f"No JSON found in response: {response_text}")
-                    return self._fallback_search(query, profiles)
+                # Find the first occurrence of '{'
+                json_start = response_text.find('{')
+                if json_start == -1:
+                    print("Debug: No JSON found in response")
+                    return []
+                
+                # Find the last occurrence of '}'
+                json_end = response_text.rfind('}') + 1
+                if json_end == 0:
+                    print("Debug: No closing brace found in response")
+                    return []
+                    
+                # Extract only the complete JSON object
+                json_text = response_text[json_start:json_end]
+                print(f"Debug: Extracted JSON text: {json_text[:200]}...")
+                
+                # Clean the JSON text
+                json_text = json_text.strip()
+                
+                matches = json.loads(json_text)["matches"]
+                print(f"Debug: Successfully parsed {len(matches)} matches")
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Debug: Failed to parse response - {str(e)}")
+                print(f"Debug: Response text: {response_text[:200]}...")
+                return []
             
             # Convert to list of tuples (profile, explanation)
             results = []
@@ -127,45 +146,18 @@ Remember: It's better to show more potential matches than to be too restrictive.
                 # Find the profile with this ID
                 profile = next((p for p in profiles if str(p.id) == profile_id), None)
                 if profile:
-                    results.append((profile, f"Match Score: {score}%\n{explanation}"))
+                    results.append((
+                        profile, 
+                        f"Match Score: {score}%\n{explanation}"
+                    ))
             
-            # If no matches found through Groq, try fallback search
-            if not results:
-                return self._fallback_search(query, profiles)
-                
-            return results
+            print(f"Debug: Returning {len(results)} results")
+            return sorted(results, key=lambda x: float(x[1].split('%')[0].split(': ')[1]), reverse=True)
                 
         except Exception as e:
-            print(f"Error during Groq search: {str(e)}")
-            return self._fallback_search(query, profiles)
-
-    def _fallback_search(self, query: str, profiles: List[UserProfile]) -> List[Tuple[UserProfile, str]]:
-        """Fallback to basic keyword matching if Groq search fails."""
-        results = []
-        query_terms = query.lower().split()
-        
-        for profile in profiles:
-            score = 0
-            matches = []
-            
-            # Check each field for matches
-            profile_text = self._create_profile_context(profile).lower()
-            
-            for term in query_terms:
-                if term in profile_text:
-                    score += 1
-                    # Find which field matched
-                    if term in profile.name.lower():
-                        matches.append(f"Name matches '{term}'")
-                    if any(term in skill.lower() for skill in profile.technical_skills):
-                        matches.append(f"Has technical skill related to '{term}'")
-                    if any(term in exp.lower() for exp in profile.ai_expertise):
-                        matches.append(f"Has AI expertise related to '{term}'")
-                    if term in profile.mentoring_preferences.lower():
-                        matches.append(f"Mentoring preferences match '{term}'")
-            
-            if score > 0:
-                explanation = "Basic Match:\n" + "\n".join(matches)
-                results.append((profile, explanation))
-        
-        return sorted(results, key=lambda x: len(x[1].split('\n')), reverse=True) 
+            print(f"Debug: Error during Groq search: {str(e)}")
+            print(f"Debug: Error type: {type(e)}")
+            if hasattr(e, 'response'):
+                print(f"Debug: Response status: {e.response.status_code}")
+                print(f"Debug: Response body: {e.response.text}")
+            return [] 
